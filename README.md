@@ -46,6 +46,8 @@ It runs at the start of a task, before any work:
 
 ## sonnet-lean: how it works
 
+**New to it?** [`docs/sonnet-lean.pdf`](docs/sonnet-lean.pdf) explains the skill in nine slides, including what a skill is.
+
 The skill is used once, when you set agents up. It writes its savings into the agent files and `CLAUDE.md`; after that it isn't loaded at all. Putting it inside the agents themselves was measured three times and costs 13–33% more for identical results, because Sonnet 5.5 already works lean and the instruction is just more to read.
 
 1. **No useless preloads.** Every skill in an agent's `skills:` list is read on every call, so the list holds only skills the agent uses for its own work.
@@ -124,6 +126,7 @@ sonnet-lean/SKILL.md       set-up guidance for subagents
 bench/                     fixtures, hidden tests, runner and graders (see bench/README.md)
   results-2026-11-06/      raw grades and harnesses of the current measurements
   HISTORY.md               earlier measurements and retired designs
+docs/sonnet-lean.pdf       a nine-slide introduction to sonnet-lean
 archive/fable-mode/        the retired skill and its source-linked reference
 ```
 
