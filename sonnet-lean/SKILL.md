@@ -1,99 +1,108 @@
 ---
 name: sonnet-lean
-description: Cut token spend whenever work runs on Claude Sonnet 5 — as a delegated subagent/worker or as the session model. Applies Anthropic's documented Sonnet 5 cost levers — effort down-mapping (Sonnet 5 medium ≈ Sonnet 4.6 high), strict-effort scoping, thinking-trigger steering, verbosity control, one-shot complete briefs, and output-shape constraints. Trigger when delegating tasks to Sonnet workers (Agent tool model:"sonnet", Workflow agent() calls), when building prompts/pipelines that call a claude-sonnet-* model, or on /sonnet-lean. Do NOT trade effort down on tasks where a wrong answer forces a re-run — a failed cheap run costs more than one correct run.
+description: Make Claude Code subagents cost less by configuring them correctly — no useless skill preloads, an explicit effort per agent, a complete brief shape — and by choosing each call's model by evidence (down to Haiku when a check can verify the result, up to Opus only after a failed check). Use when creating or editing a subagent definition (`.claude/agents/*.md`), especially Sonnet ones, when setting `model:`/`effort:`/`skills:` in agent frontmatter or a Workflow script's `agent()` options, when writing an orchestrator's delegation rules in `CLAUDE.md` (which model to call an agent with, when to move one call down to Haiku or up to Opus), when reviewing why Sonnet agents are expensive, or on /sonnet-lean. Set-up-time guidance only: do NOT load it for routine delegation (an orchestrator carrying it while delegating cost 24% more, measured) and do NOT list it in an agent's `skills:` preload (inside a worker it saves nothing and costs tokens, measured three times).
 ---
 
-# Sonnet Lean — spend fewer tokens per Sonnet call
+# Sonnet Lean — cheaper subagents, set up once
 
-Every rule here is from Anthropic's "Prompting Claude Sonnet 5" page (see Sources). Sonnet 5's defaults are tuned for capability, not cost: effort defaults to `high`, adaptive thinking is on by default, and its new tokenizer produces ~30% more tokens for the same text than Sonnet 4.6. Left alone, a Sonnet worker thinks, narrates, and pads more than the task needs. This skill sets each lever deliberately.
+This skill changes how your agents are **configured** — once, when you write or review their definitions and your orchestrator's delegation rules. After that the savings live in the agent files and in `CLAUDE.md`, and the skill isn't needed at run time. Sections 1–5 make an agent cheaper on the model it already has; section 6 decides when a call should use a different model, in either direction. Every rule below is measured in this repository's `bench/` (two to three runs per cell: enough to show a direction, not to size it precisely) or cites Anthropic's documentation.
 
-## 1. First question: is Sonnet even the right tier?
+## 1. Don't preload this skill (or any skill the agent can't act on)
 
-Route by difficulty, not habit. Bulk mechanical work — renames, extractions, format checks, file classification — goes to **Haiku**. Sonnet is for scoped work that needs real reasoning. If the task needs deep synthesis or judgment across many interacting parts, don't force it onto Sonnet at high effort — that often costs more than a stronger model doing it right once.
+A skill in an agent's `skills:` field is read on every call. Measured on Sonnet 5.5, same task and brief, with and without sonnet-lean preloaded: no quality change, and the preload cost more — about +10% on a real HeroBrowser UI task, +15% on a four-module coding task, +25–33% on a short code review. Sonnet 5.5 already keeps its thinking short and its output compact; telling it to be lean has nothing left to remove.
 
-Measured (README, 2026-09-09): on a four-module coding task graded by hidden tests, Sonnet 5 at `low` effort scored the same 13/13 as Opus 5 and Fable 5.1, in half the time, at a fifth of Fable's cost. Start with Sonnet — as the worker, and as the session model for well-specified work — and escalate on evidence, not on habit.
+- In each Sonnet agent's frontmatter, list only skills the agent uses to do its own work (a project's data-shape rules, a domain playbook). Remove `sonnet-lean`, and remove any body paragraph that tells the agent to apply it.
+- Remove preloads of skills that no longer exist; a dead name is silently ignored and hides intent.
 
-## 2. Set effort deliberately (the biggest lever)
+## 2. Set `effort:` on every Sonnet agent
 
-Sonnet 5's effort defaults to `high`. Anthropic's cross-model mapping: **Sonnet 5 at `medium` is comparable in intelligence to Sonnet 4.6 at `high`**, and Sonnet 5 at `high` ≈ Sonnet 4.6 at `max`. So for most delegated, well-scoped worker tasks, `medium` buys yesterday's high-effort quality at reduced spend. Effort saves what the task would otherwise spend on thinking: on mechanical work Sonnet 5 barely thinks at any level (measured 0–32 thinking tokens across `low`/`medium`/`high` on a file-outline task; see the README), so there the output constraints in §4 are the whole lever. On a task that does make it think (the same four-module job: ~9,000 thinking tokens at `high`, ~900 at `low`), quality held at every level — 13/13 hidden tests at `low`, `medium` and `high` — and what moved was **time**: `low` finished in half the time of `high`, while cost stayed flat because in Claude Code the fixed input of each run (a ~30K-token system prompt plus the files read) dwarfs the thinking saved. Inside Claude Code, effort is chiefly a latency lever; on the raw API with a small system prompt, the same reduction shows up as cost.
+An agent with no `effort:` runs at the effort of the session that calls it — if your orchestrator runs at `high` or `xhigh`, so does every worker. Set it explicitly per agent:
 
-- **`medium`** — the lean default for delegated scoped work (focused reviews, single-module implementations, structured research reads).
-- **`low`** — short, mechanical, latency-sensitive tasks that are not intelligence-sensitive (extraction, reformatting, checklist verification).
-- **`high`/`xhigh`** — only when the subtask itself is genuinely hard; at that point question whether it should be delegated to Sonnet at all (§1).
+| Agent's work | `effort:` | Evidence |
+|---|---|---|
+| Mechanical, well-specified (content tables, asset wiring, renames, CRUD) | `low` | −15–25% cost and ~20% faster than `high` on a coding task, same hidden-test score |
+| Default for agentic coding against a clear spec | `medium` | Anthropic's recommended start for Sonnet 5.5 agentic coding; −3% against the inherited default on a real UI task, same score |
+| Hard or long (engine determinism, large refactors, open-ended design) | `high` | Sonnet 5.5's API default |
+| `xhigh` / `max` | avoid for routine work | Docs: at these levels Sonnet 5.5 starts its own review rounds and subagents; a stop-and-report paragraph cut cost by about a third at `max` |
 
-Sonnet 5 **respects effort strictly**, especially at the low end: at `low`/`medium` it scopes work to exactly what was asked rather than going above and beyond. That's the cost win — but it means under-specified briefs fail quietly. If you see shallow reasoning on a complex task, **raise effort rather than prompting around it**; if you must stay at `low` for latency, add: "This task involves multistep reasoning. Think carefully through the problem before responding."
+Two documented risks at `low`/`medium`, none seen in 22 measured runs: on long tasks the agent may stop to check in before finishing, and at `low` it may report a change as done without running a check. If you see either, raise that agent's effort one level before adding prompt text. *(Prompting Sonnet 5.5, "Calibrate effort", "Steer initiative and scope", "Verification on coding tasks")*
 
-Where to set it: the Workflow tool's `agent(prompt, {model: 'sonnet', effort: 'medium'})` (load the bundled `/workflow-authoring` skill before writing a script); a custom subagent definition with `model: sonnet` and `effort: medium` in its frontmatter, which gives interactive Agent-tool delegation an effort lever the tool call itself lacks (the Agent tool takes `model` but not `effort`; an unspecified effort inherits the session's); on the API, `output_config: {effort: "..."}` with `thinking: {type: "adaptive"}`. Then check `/tasks`: it shows the model and effort each worker actually ran on, and when `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is set every per-spawn and frontmatter model pick is silently ignored. Pick effort once at the start — on Sonnet 5 a mid-session effort change invalidates the prompt cache and the next turn re-reads the whole conversation uncached.
+Effort levels on the 5.5 models are recalibrated; don't carry Sonnet 5 settings over.
 
-## 3. One complete brief, one turn
+## 3. Brief the agent once, completely
 
-Anthropic's own token-efficiency guidance: well-specified, clear, accurate task descriptions **upfront in the first turn** maximize autonomy and minimize extra token usage; ambiguous prompts drip-fed across multiple turns reduce token efficiency *and* performance. For a Sonnet worker that means the brief contains, in one message:
-
-- the task and the reason behind it (one line);
-- the exact deliverable shape (see §4);
-- the context it needs — **file paths and line ranges over pasted content** when the worker can read files itself; when you must inline long material, put it at the top and the ask at the end;
-- what is explicitly out of scope.
-
-Sonnet 5 follows instructions **literally**, especially at lower effort: it won't generalize an instruction from one item to the others or infer requests you didn't make. State scope explicitly ("apply this to every section, not just the first") — a re-run caused by an under-specified brief erases every token you saved.
-
-## 4. Constrain the output — tokens out are the expensive ones
-
-- Demand the deliverable's exact shape. Where the harness supports it, pass a **structured-output schema** (Workflow `agent(..., {schema})`) — validated data, no prose wrapper, no parsing retries.
-- For prose outputs, include Anthropic's verbosity steer: *"Provide concise, focused responses. Skip non-essential context, and keep examples minimal."* Target specific verbosity patterns (over-explaining, restating the brief) with positive instructions — showing what good output looks like beats "don't" lists.
-- Tell workers their final message **is the return value**: raw findings/data only — no preamble, no narrated recap of steps, no restating the task.
-- Don't ask for interim status scaffolding ("summarize after every 3 tool calls") — Sonnet 5 already calibrates progress updates; forced ones are pure token overhead.
-- When Sonnet 5 is the **session** model in Claude Code, the built-in **Concise** output style (`/config` → Output style) applies the results-first, no-narration steer at the system-prompt level for the whole session, "while doing the engineering work as thoroughly as in the Default style." It shapes the main conversation only — non-fork subagents run their own system prompt, so workers still need the steer in the brief. Select it at session start; a mid-session switch rebuilds the prompt cache.
-
-## 5. Batch items per worker — the spawn is the expensive part
-
-Every subagent call carries a fixed cost before it does anything useful: its system prompt, tool definitions, `CLAUDE.md`, and the files it reads. Measured in Claude Code (README, 2026-09-09): three Sonnet workers outlining one file each used 140,707 tokens in total; one worker outlining all three used 69,361 — half — with identical coverage, at about twice the wall time because the items ran in sequence inside one worker. The rules:
-
-- Give **one worker every item that shares context** (same repo area, same instruction) unless latency matters more than tokens or the items would overflow its context.
-- Keep the brief's shape *per item* — a header line per item, then that item's deliverable — so the return stays machine-readable (template in §7).
-- Fan out across workers only when the items are independent **and** you need them in parallel; then keep every worker's configuration identical (model, effort, agent type, tools, schema) so they read each other's cached prefix.
-- For large returns, have the worker write the full output to a file and return the path plus a three-line summary: the parent re-reads every returned token on every later turn. (Unmeasured; follows from the same token accounting.)
-
-## 6. Thinking and API parameters
-
-- Adaptive thinking is **on by default** (a change from Sonnet 4.6). For mechanical workloads, prefer lowering effort over disabling thinking — with thinking off, Sonnet 5 reaches for tools less, so tool-dependent tasks degrade. If it over-thinks on simple calls (common with large system prompts), steer: *"Thinking adds latency and should only be used when it will meaningfully improve answer quality, typically for problems that require multistep reasoning. When in doubt, respond directly."*
-- `max_tokens` is a hard cap on thinking **plus** response; too tight at `high`+ yields all-thinking-then-truncation. The new tokenizer's ~30% inflation means limits tuned for Sonnet 4.6 may truncate — leave headroom, and use `max_tokens` (not prompts) as the hard cost ceiling.
-- `temperature`/`top_p`/`top_k` return a 400 error on Sonnet 5 — remove them; steer variety via the prompt.
-- Manual extended thinking (`budget_tokens`) is removed — adaptive thinking + effort replaces it.
-- **Cache is a cost lever too.** In Claude Code, subagent and workflow requests get a 5-minute prompt cache even on a subscription; `subagentPromptCacheTtl: "1h"` (or `experimental.cacheTtl: 1h` in one agent's frontmatter) keeps a worker's cache warm across a long fan-out, at the higher 1-hour write rate. Workers with the same model, effort, agent type, tools, and output schema read each other's cached prefix in a workflow fan-out — vary the brief, not the configuration.
-
-## 7. Worker briefing template
+Put this shape into the agent's definition (its body, as the return format it always uses) or into the orchestrator's project instructions once; don't load this skill on every delegation to get it. Measured: an Opus 5.5 orchestrator carrying this skill while delegating to a Sonnet worker cost 24% more than without it ($0.55 against $0.45, same 13/13), because both the orchestrator and the worker did more. Every call to the agent should then be one message that contains:
 
 ```text
 Task: [one sentence — what and why].
-Deliverable: [exact shape — schema / file / list format]. Your final message is the
-return value: raw data only, no preamble or recap.
-Context: [paths + line ranges; inline long material above this line, ask below it].
-Scope: [explicit boundaries — "every X, not just the first"; what NOT to do].
-Provide concise, focused responses. Skip non-essential context, and keep examples minimal.
+Deliverable: [exact shape — files, schema, list]. Your final message is the return
+value: what changed, check results, anything not done. No preamble or recap.
+Context: [file paths + line ranges, not pasted content; long material above the ask].
+Scope: [explicit boundaries — "every X, not just the first"; what NOT to touch].
+Done when: [the command that must pass — tests, typecheck].
 ```
 
-Pair with `{model: 'sonnet', effort: 'medium'}` (or `low` per §2).
+Sonnet 5.5 follows instructions literally, so state scope explicitly. A second message to fix an under-specified first one costs more than the first one saved. Don't ask for interim status updates; the agent already writes them.
 
-Batched variant (§5), one worker for N items:
+**Not a default:** Anthropic's "don't add features, tests, files, docs or refactors that weren't asked for" paragraph. On our coding task it cost 24% more with nothing to prevent. Add it to a brief only if an agent actually creates files you didn't ask for.
+
+## 4. Batch items that share context
+
+One agent doing three related items used half the tokens of three agents doing one each (69K against 141K, same result, about twice the wall time; measured on Sonnet 5). Fan out only when items are independent and you need them in parallel, and then give every parallel agent the same model, effort and tools so they share the cached prompt prefix.
+
+## 5. API and Workflow notes (5.5 models)
+
+- Workflow: `agent(prompt, {model: 'sonnet', effort: 'medium', schema})` — a schema returns validated data with no prose wrapper.
+- API: `output_config: {effort}`; thinking can't be disabled on Sonnet 5.5 (`between_tools` is the lowest setting, at `high` or below); to get less thinking lower effort, since asking the model to think less doesn't reliably work; `max_tokens` covers thinking plus reply; `temperature`/`top_p`/`top_k` and forced tool choice return 400.
+- A per-message effort change (beta) keeps the prompt cache; changing the top-level value doesn't.
+
+## 6. Choose the model per task: down when the result is checkable, up only on evidence
+
+Two directions, two different rules. Both are measured; neither assumes a project's design.
+
+**Down a tier: small, well-specified work whose result a check can verify.** Haiku 5.5 matched Sonnet 5.5 on every such task measured, at about a tenth of the cost, but was slower:
+
+| Task (hidden tests) | Haiku 5.5 | Sonnet 5.5 |
+|---|---|---|
+| Four-module coding task (13) | 13/13 ×4 · $0.02 · ~85 s | 13/13 · $0.19–0.24 · ~60 s |
+| Two one-file tasks (17, 10) | full marks ×4 · under $0.01 | — |
+| Real project UI module, HeroBrowser (10) | 10/10 ×2 · $0.03 · ~78 s | 10/10 · $0.22 · ~44 s |
+
+End to end: an Opus 5.5 orchestrator told it could route well-specified work down picked Haiku and cost 39% less ($0.28 against $0.46, same 13/13); without that guidance it always picked Sonnet. Not measured: long agent tasks on Haiku (Anthropic notes Haiku 5.5 is more likely to skip a search, stop early or skip a check at `low` in long agent prompts, so use `medium`+), and Haiku past 100K-token prompts, where its price rises 5× (still about a quarter of Sonnet's).
+
+**Up a tier: only after the cheaper run failed a check.** Measured on a real, hard engine change (HeroBrowser commit `298e8358`: move a damage clock without changing RNG order or determinism), graded by the project's own 2228-check test file:
+
+| Agent model | Correct | Cost per run | Time |
+|---|---|---|---|
+| Sonnet 5.5 | 2228/2228 ×2 | $0.44–0.50 | ~1.5 min |
+| Opus 5.5 | 2228/2228 ×2 | $1.33 (~3×) | 8–10 min |
+| Fable 5.1 | 2228/2228 ×1 | $7.85 (~17×) | 14 min |
+
+The bigger models were more thorough (they ran the project's balance harness unasked) but not more correct, and slower. "Looks hard" is not evidence; a failed test, typecheck or harness run is. If you want the extra checks a bigger model would run, name them in the brief's "Done when" instead. Anthropic still recommends Opus for the hardest long-horizon work, and none of the tasks measured here was hard enough to make Sonnet fail: escalate when yours does.
+
+**Write the policy into the orchestrator's `CLAUDE.md`**, which is always loaded and costs almost nothing per call (unlike carrying this skill: +24%). Pick the variant that matches your project:
 
 ```text
-Task: [one sentence — what and why]. This covers [N] items.
-Deliverable, per item: a header line "### <item>", then [exact shape]. Your final
-message is the return value: the [N] blocks only, no preamble or recap.
-Context: [paths per item; shared material above this line, ask below it].
-Scope: every item listed, in order; [what NOT to do].
-Provide concise, focused responses. Skip non-essential context, and keep examples minimal.
+# Flexible: the orchestrator picks the tier per call
+Agent models: default to each agent's own model. For a small, well-specified task
+whose result a test, typecheck or validator will check, pass `model: 'haiku'`.
+Upgrade one call a tier (haiku → sonnet → opus) only after that run failed a check
+or got stuck, and say why. Never upgrade because a task looks hard.
 ```
 
-## When NOT to lean
-
-Don't down-tier effort on: tasks whose failure you can't cheaply detect, verification/judge passes guarding a decision, or anything you'd have to re-run on a stronger setting anyway. The cheapest run is the one that's correct the first time.
+```text
+# Pinned: each agent keeps the model its definition sets
+Agent models: call each agent with its own model (leave the Agent tool's `model` unset).
+Upgrade one call to `model: 'opus'` only after that agent's run failed a check
+(tests, typecheck, harness) or got stuck, and say why. Never upgrade because a task
+looks hard. Fable as an agent model only after Opus failed too.
+```
 
 ## Sources
 
-- Prompting Claude Sonnet 5 — https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5 (effort mapping, strict effort compliance, thinking defaults and steering snippets, tokenizer +30%, sampling-params removal, interactive-coding token-efficiency guidance)
-- Re-verified against the live docs 2026-08-05 and 2026-09-09: every lever above unchanged. Sonnet 4.6 sits in Anthropic's legacy models table — the Sonnet 5 ↔ 4.6 effort equivalence remains the docs' own current framing. Sonnet 5's $2/$10 per MTok is now its standard list price.
-- Batching (§5), effort as a latency lever (§2), and the Sonnet-vs-Opus-vs-Fable comparison (§1) — measured 2026-09-09; method and numbers in this repository's README.
-- Harness levers (frontmatter `effort`, `/tasks`, cache TTL settings, Concise output style, the model-force caveat) — Claude Code docs: https://code.claude.com/docs/en/sub-agents, https://code.claude.com/docs/en/prompt-caching, https://code.claude.com/docs/en/output-styles; Claude Code changelog releases 2.1.237, 2.1.243, 2.1.248, 2.1.251, 2.1.257 — https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
-- Prompting best practices — https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices (long-context placement, output-format control, subagent guidance)
-- The former companion skill `fable-mode` (when to delegate, to which tier) was retired on 2026-09-09 after benchmarks showed no gain over Claude Code's defaults; §1 above keeps the tier-routing rule this skill needs. Its sourced reference library lives in `archive/fable-mode/reference.md`.
+- Prompting Claude Sonnet 5.5 — https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5-5
+- Effort — https://platform.claude.com/docs/en/build-with-claude/effort
+- Sonnet 5.5 migration guide — https://platform.claude.com/docs/en/models/sonnet-5-5/migration-guide
+- Claude Code subagents — https://code.claude.com/docs/en/sub-agents (frontmatter `model`, `effort`, `skills`)
+- Measurements — `bench/results-2026-11-06/` in this repository (preload: session B ledger arm, `herobrowser/`, `session-c-preload/`; set-up behaviour: `setup-check/`; model up: `herobrowser-hard/`; model down: Haiku arms, `session-b/graded-delegation.json`; effort sweep; scope line; batching on 2026-09-09).
+- Re-verified against the live docs 2026-11-06.
