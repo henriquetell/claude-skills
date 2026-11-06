@@ -1,0 +1,1 @@
+Create a new subagent definition at .claude/agents/content-worker.md. It fills in game content tables (JSON files under data/) from a spec the orchestrator gives it: mechanical, well-specified work, checked by `npm run validate:data`. It runs on Sonnet. Make sure it uses our sonnet-lean skill so it stays cheap. Write the file, then tell me in a few lines what you set and why.

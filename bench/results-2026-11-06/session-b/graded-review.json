@@ -1,0 +1,131 @@
+[
+ {
+  "id": "review-o55-rev-pm-1",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 27,
+  "cost": 0.177,
+  "out_tokens": 2487,
+  "recall_all": "11/11",
+  "recall_critical": "3/3",
+  "missed": [],
+  "report_chars": 4338,
+  "report": "**Original:** Review lib/orders.js. Only report critical issues.\n\n**Rewritten prompt:**\n- **Goal:** Review `@lib/orders.js`, the order helpers used by the checkout service, for defects before they reach production.\n- **Done when:** Every exported function and the module-level state have been checked against the README's data contract.\n- **Scope:** All of `lib/orders.js`. Out of scope: the callers and the `db` implementation.\n- **Mode:** Assessment only. No edits.\n- **Source of truth:** The README. Orders have the shape `{ id, items:[{sku,price,qty}], paid, createdAt:'YYYY-MM-DD', status }`, and `db` is async.\n- **Deliverable:** Every issue I find, including uncertain and low-severity ones. Each comes with a line, a severity, a confidence and a concrete failure. They're ranked so you can filter afterwards.\n\n**Changes:**\n- I removed \"only report critical issues\". Current Claude models take that filter literally and leave out real bugs. Listing everything with a severity lets you filter afterwards without losing anything (R8).\n- I added the goal, the README as the source of truth, and that this is an assessment only (R1, R6, R4).\n\n---\n\n## Findings (most severe first)\n\nThe first three are what I'd call critical.\n\n| # | Line | Severity | Confidence | Issue |\n|---|---|---|---|---|\n| 1 | 29 | **Critical** | High | **`eval` on the discount code allows remote code execution.** A code like `PCT0); require('child_process').execSync('…'); (` runs whatever follows. Even harmless bad input breaks it: `PCT` alone is a syntax error, `PCT150` gives a negative total, `FLAT999` takes the total below 0. Parse the number, check its range, then do the arithmetic. |\n| 2 | 53 | **High** | High | **`submitOrder` doesn't `await saveOrder`.** It returns the id before the order is saved. If the insert fails, the rejection is unhandled (Node may crash) and the caller still thinks the order was submitted. |\n| 3 | 34 | **High** | High | **`paginate` is off by one.** `slice(start, start + limit - 1)` returns `limit - 1` items, so one order per page is never shown. It should be `start + limit`. |\n| 4 | 19 | High | High | **`isPaidInFull` compares floats with `===`.** For example, items priced 0.1 and 0.2 add up to 0.30000000000000004, which is not `=== 0.3`, so a fully paid order is reported as unpaid. Use integer cents or a tolerance. |\n| 5 | 43–44 | Medium | High | **`orderDay` can return the wrong day.** `new Date('2026-01-31')` is read as UTC midnight, but the local-time getters are used. West of UTC that gives `2026-1-30`. The output also isn't zero-padded, so it doesn't match the README's `YYYY-MM-DD`. |\n| 6 | 58–65 | Medium | High | **`loadOrder` cache and error handling:** <br>• It caches `null` for missing ids, so an order created later is never found. <br>• The cache is never invalidated, so it serves stale orders after updates. <br>• The cache grows without limit. <br>• It hands every caller the same mutable object. <br>• Errors are only logged and the function returns `undefined`, so callers can't tell \"not found\" from \"database down\". |\n| 7 | 38 | Medium | High | **`sortItems` changes `order.items` in place.** `Array.prototype.sort` sorts the array it's called on, so the order's own item list gets reordered as a side effect. Use `[...order.items].sort(...)`. |\n| 8 | 69 | Medium | High | **`cloneOrder` is a shallow copy.** The clone shares its `items` array with the original, so editing the clone's items also changes the original. Use `structuredClone`. |\n| 9 | 73 | Medium | High | **`isValidEmail` rejects most real addresses**: uppercase letters, digits, dots, `+`, subdomains, and any domain not ending in `.com` (e.g. `john.doe@mail.co.uk`). |\n| 10 | 52 | Low | Medium | `submitOrder` sets `status = 'submitted'` before saving. If the save fails, the in-memory order still says it was submitted. |\n| 11 | 9 | Low | Medium | `legacyTaxRate` returns 0.7 (70%) for regions other than the EU, which looks like a typo for 0.07. Nothing calls it at the moment, so it's harmless until someone does. |\n| 12 | 14, 77 | Low | Medium | Money is handled as floats with no rounding, and there's no input validation: negative `qty` or `price`, or a missing `items`, will throw or produce bad totals. |\n\n**Follow-ups:** The file has no tests. Findings 1–4 are worth covering with tests when they're fixed."
+ },
+ {
+  "id": "review-o55-rev-pm-2",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 29,
+  "cost": 0.179,
+  "out_tokens": 2599,
+  "recall_all": "11/11",
+  "recall_critical": "3/3",
+  "missed": [],
+  "report_chars": 4684,
+  "report": "**Rewritten prompt**\n\n```text\nOriginal: Review lib/orders.js. Only report critical issues.\n\nRewritten prompt:\nGoal: Review lib/orders.js, the order helpers for the checkout service, so the owner can decide what to fix before it handles real orders and money.\nDone when: every exported function and the unexported legacyTaxRate has been checked against the order/db contract in README.md.\nScope: all of lib/orders.js. Out of scope: callers, which aren't in the repo.\nMode: assessment only. No edits.\nContext: @lib/orders.js, @README.md (order shape `{ id, items:[{sku,price,qty}], paid, createdAt:'YYYY-MM-DD', status }`; async db with insert/findOne).\nSource of truth: README.md, then the comments in the code. No conflicts found.\nDeliverable: every issue found, including uncertain and low-severity ones, each with line, severity, confidence, and a concrete failure. Sorted by severity so you can filter afterwards.\n\nChanges:\n- Removed \"only report critical issues\". Claude follows that filter literally and leaves out real bugs it has found. You get everything, ranked, and can cut at any severity you like (R8).\n- Added the goal and the checkout context, which make money and persistence bugs weigh more (R1).\n- Named the README as the contract the code is checked against (R6).\n- Stated assessment-only, so no edits are made (R4).\n```\n\n**Findings** (14 issues, most severe first)\n\n| # | Line | Severity | Conf. | Issue → failure |\n|---|---|---|---|---|\n| 1 | 26–29 | **Critical** | High | **`eval` on a discount code the user supplies.** A code like `PCT0); process.exit(1); (` or `FLAT0;require('child_process').execSync(...)` runs as code on the server. Fix: parse the number with `/^(PCT\\|FLAT)(\\d+)$/` and do the maths directly. |\n| 2 | 53 | **Critical** | High | **`submitOrder` doesn't `await saveOrder`.** It returns the id before the order is stored. If the insert fails, the rejection is unhandled (Node may crash) and the order is lost while the caller thinks it succeeded. |\n| 3 | 34 | High | High | **Pagination off by one.** `start + limit - 1` returns `limit-1` items, so the last order on every page never shows up on any page. |\n| 4 | 19 | High | High | **Comparing money floats with `===`.** For items 0.1 + 0.2 with `paid: 0.3`, the order counts as not paid. Overpayment also returns false. Use integer cents or a tolerance, and decide whether `>=` is the intended check. |\n| 5 | 22–29 | High | High | **No bounds on discounts.** `FLAT500` on a $20 order gives −480, and `PCT150` gives a negative total. A `code` of null or undefined throws. Clamp the result to 0 or above and validate the code. |\n| 6 | 43–44 | Medium | High | **`orderDay` can return the wrong day.** `new Date('2026-01-31')` is read as UTC midnight but formatted with local getters, so in any timezone behind UTC it returns `2026-1-30`. It also returns `2026-1-5` instead of the README's `YYYY-MM-DD`. Use `getUTC*` with zero-padding, or just `createdAt.slice(0,10)`. |\n| 7 | 58–65 | Medium | High | **`loadOrder` swallows errors.** A DB failure is logged with `console.log` and returns `undefined`, so callers can't tell \"not found\" from \"DB down\". |\n| 8 | 58, 61 | Medium | High | **Cache is never invalidated and is shared.** It never expires, so once an order changes (e.g. `submitOrder` sets status) `loadOrder` keeps serving the stale row. A `null` \"not found\" result is cached forever. Callers get the same mutable object back. The cache also grows without limit. |\n| 9 | 38 | Medium | High | **`sortItems` mutates `order.items` in place** with `.sort`, so the caller's order is reordered as a side effect. Use `[...order.items].sort(...)`. |\n| 10 | 69 | Medium | Medium | **`cloneOrder` is a shallow copy.** `items` is shared, so editing the clone's items changes the original order. Use `structuredClone`. |\n| 11 | 73 | Medium | High | **`isValidEmail` rejects valid addresses**: uppercase, digits, dots, `+`, subdomains, any TLD except `.com` (`jo.doe@mail.example.org`, `A1@x.io`). |\n| 12 | 9 | Low | Medium | **`legacyTaxRate` returns 0.7 (70%) for non-EU regions**, almost certainly a typo for 0.07. It isn't exported and has no callers, so it's dead code today but a trap if it's reused. |\n| 13 | 14, 77 | Low | High | **Money held as floats with no rounding.** `withTax(19.99)` gives `21.589200000000002`. `computeTotal` doesn't check for negative or non-numeric `price`/`qty`. |\n| 14 | 64 | Low | High | Errors go to `console.log` instead of a logger or `console.error`. |\n\nIf you only want the critical ones: #1 (code injection through `eval`) and #2 (lost writes and unhandled rejections in `submitOrder`). #3–#5 are next, since they give wrong pages and wrong money amounts."
+ },
+ {
+  "id": "review-o55-rev-raw-1",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 13,
+  "cost": 0.113,
+  "out_tokens": 985,
+  "recall_all": "5/11",
+  "recall_critical": "3/3",
+  "missed": [
+   "4 sortItems mutates input (medium)",
+   "5 orderDay timezone/padding (medium)",
+   "6 legacyTaxRate dead code / 0.7 (low)",
+   "9 cloneOrder shallow copy (high)",
+   "10 orderCache unbounded (medium)",
+   "11 isValidEmail too strict (low)"
+  ],
+  "report_chars": 1583,
+  "report": "I found four critical issues in `lib/orders.js`. I only read the file and didn't run anything.\n\n1. **Code injection via `eval`** (`lib/orders.js:26-29`). `applyDiscountCode` puts the discount code straight into a string and passes it to `eval`. A code like `FLAT0; require('child_process').execSync('...')` runs any code on the server. This is a remote code execution hole if the code comes from the user, which discount codes usually do. Fix: parse the number part with `Number(code.slice(n))`, reject anything that isn't a finite number in the allowed range, and do the arithmetic directly.\n\n2. **Order submission is fire-and-forget** (`lib/orders.js:53`). `submitOrder` calls `saveOrder(db, order)` without `await`. It returns the order id as if it succeeded even when the insert fails. A failed insert becomes an unhandled promise rejection, which crashes Node by default, and the order is silently lost. Fix: `await saveOrder(db, order);`.\n\n3. **Pagination drops one record per page** (`lib/orders.js:34`). `slice(start, start + limit - 1)` returns `limit - 1` items, and the end of `slice` is already exclusive. With 10 per page, orders 10, 20, 30 and so on never show up on any page. Fix: `orders.slice(start, start + limit)`.\n\n4. **Exact float comparison for payment status** (`lib/orders.js:19`). `isPaidInFull` uses `===` on floating-point money values. For example, items priced 0.1 and 0.2 add up to `0.30000000000000004`, so an order paid with exactly `0.3` is reported as not fully paid. Fix: store amounts as whole cents, or round both sides to cents before comparing."
+ },
+ {
+  "id": "review-o55-rev-raw-2",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 13,
+  "cost": 0.11,
+  "out_tokens": 829,
+  "recall_all": "5/11",
+  "recall_critical": "3/3",
+  "missed": [
+   "4 sortItems mutates input (medium)",
+   "5 orderDay timezone/padding (medium)",
+   "6 legacyTaxRate dead code / 0.7 (low)",
+   "9 cloneOrder shallow copy (high)",
+   "10 orderCache unbounded (medium)",
+   "11 isValidEmail too strict (low)"
+  ],
+  "report_chars": 1163,
+  "report": "I found two critical issues in `lib/orders.js`.\n\n**1. Code injection through `eval` (`lib/orders.js:29`)**\n`applyDiscountCode` pastes the user's discount code straight into a string and runs it with `eval`. Anyone who can enter a code can run any JavaScript on the server. For example, `FLAT0; require('child_process').execSync('…')` runs a shell command, and `PCT0;process.exit()` shuts the service down. Fix: read the number out with a strict regex such as `/^(PCT|FLAT)(\\d{1,3})$/`, convert it with `Number()`, do the arithmetic directly, and never call `eval`.\n\n**2. `submitOrder` doesn't wait for the save (`lib/orders.js:53`)**\n`saveOrder(db, order)` is called without `await`. As a result:\n- `submitOrder` returns the order ID as if it succeeded, even when the insert fails, so callers confirm orders that were never stored.\n- A failed insert becomes an unhandled promise rejection. On Node 15 and later, that crashes the process by default.\n\nFix: `await saveOrder(db, order);`\n\nI left out problems below critical, such as the off-by-one in `paginate`, comparing float totals with `===`, and `loadOrder` swallowing errors. I can list those too if you want."
+ },
+ {
+  "id": "review-s55-rev-pm-1",
+  "subtype": "success",
+  "turns": 4,
+  "api_s": 17,
+  "cost": 0.091,
+  "out_tokens": 2109,
+  "recall_all": "11/11",
+  "recall_critical": "3/3",
+  "missed": [],
+  "report_chars": 4073,
+  "report": "**Original:** Review lib/orders.js. Only report critical issues.\n\n**Rewritten prompt:**\n- **Goal:** Review `lib/orders.js`, the order helpers for the checkout service. The findings will be triaged afterwards, so the review needs to be complete.\n- **Done when:** Every function in the file has been read. Every issue found is reported with a confidence and an estimated severity.\n- **Scope:** `lib/orders.js` only, every function.\n- **Mode:** Assessment. No edits.\n- **Context:** `README.md` gives the order shape `{ id, items: [{ sku, price, qty }], paid, createdAt: 'YYYY-MM-DD', status }`. `db` is async, with `insert` and `findOne`.\n- **Source of truth:** The README and the comments in the file.\n- **Deliverable:** A list of `line – issue – confidence – severity – why it matters`, ordered by severity.\n\n**Changes:**\n- \"Only report critical issues\" became \"report everything, with confidence and severity per item\" (R8). Current Claude models follow severity filters literally and drop real bugs. Filtering is better done by you afterwards.\n- Added mode, scope, and deliverable shape (R3, R4, R7).\n\n## Findings\n\n| Line | Issue | Confidence | Severity |\n|---|---|---|---|\n| 29 (26–27) | **`eval` on a string built from the discount `code`.** A code such as `PCT10; process.exit()` or `FLAT0);require(...)` runs arbitrary code. This is remote code execution if codes are user-supplied. Parse the number and compute directly. | High | Critical |\n| 53 | **`saveOrder` is not awaited in `submitOrder`.** The function returns the id before the insert finishes. A failed insert becomes an unhandled rejection, and the caller thinks the order was submitted. Status is also set before the save succeeds. | High | Critical |\n| 34 | **Off-by-one in `paginate`.** `slice(start, start + limit - 1)` returns `limit-1` items per page. Every page loses one order, so some orders are never shown. It should be `start + limit`. | High | High |\n| 19 | **`isPaidInFull` compares floats with `===`.** Sums like `0.1*3` give `0.30000000000000004`, so fully paid orders are reported unpaid. Compare in integer cents or within an epsilon. It also fails for overpayment. | High | High |\n| 63–65 | **`loadOrder` swallows DB errors.** It logs and returns `undefined`, so callers can't tell \"not found\" from \"DB down\". Rethrow. | High | High |\n| 58–62 | **Cache problems in `loadOrder`.** `orderCache` has no invalidation or size bound, so it is stale after updates and grows without limit. It also caches `null` or `undefined` rows when the order isn't found. | Medium | Medium |\n| 43–44 | **Timezone bug in `orderDay`.** `new Date(\"2026-01-31\")` is parsed as UTC, but `getDate()` and `getMonth()` use local time. In timezones behind UTC this returns the previous day. The output is also not zero-padded (`2026-1-31`). Use `order.createdAt` directly or the UTC getters. | High | Medium |\n| 38 | **`sortItems` mutates `order.items` in place.** It reorders the caller's data as a side effect. Use `[...order.items].sort(...)`. | High | Medium |\n| 9 | **`legacyTaxRate` returns 0.7 (70%) for every non-EU region.** It is unused and not exported. It is probably a typo or dead code, and dangerous if anyone wires it up. | Medium | Low |\n| 73 | **`isValidEmail` regex is far too strict.** It rejects uppercase letters, digits, dots, `+`, hyphens, subdomains, and every TLD except `.com`. Real customers are rejected. | High | Medium |\n| 69 | **`cloneOrder` is a shallow copy.** `items` is shared with the original, so mutating the clone's items, including through `sortItems`, changes the original. | High | Low |\n| 14, 77 | **Money as floating point, and `withTax` is unrounded.** `amount * 1.08` produces fractional cents. There is also no validation of negative or non-numeric `price` or `qty`. | Medium | Low |\n| 26–27 | **Discount values are not validated.** `PCT150` gives a negative total, and `FLAT` larger than the total does too. Beyond the `eval` issue, there is no clamping. | Medium | Medium |\n\nFollow-ups: there are no tests in the repo, so none of the above is covered. I made no edits."
+ },
+ {
+  "id": "review-s55-rev-pm-2",
+  "subtype": "success",
+  "turns": 4,
+  "api_s": 19,
+  "cost": 0.093,
+  "out_tokens": 2302,
+  "recall_all": "11/11",
+  "recall_critical": "3/3",
+  "missed": [],
+  "report_chars": 4576,
+  "report": "**Original:** Review lib/orders.js. Only report critical issues.\n\n**Rewritten prompt:**\n- **Goal:** Review `lib/orders.js`, the order helpers for the checkout service. The output will be triaged afterwards, so completeness matters more than a short list.\n- **Done when:** Every function in the file has been read, and every issue you find is listed with a location, an explanation, a confidence level and an estimated severity.\n- **Scope:** All 12 exported functions, plus the unexported `legacyTaxRate`. Out of scope: style preferences.\n- **Mode:** Assessment. I won't edit the file.\n- **Context:** `@lib/orders.js`. `README.md` gives the order shape: `{ id, items: [{sku, price, qty}], paid, createdAt: 'YYYY-MM-DD', status }`. `db` is an async store with `insert` and `findOne`.\n- **Source of truth:** The README and the comments in the code. There are no tests, so no conflicts.\n- **Deliverable:** A list ordered by severity. Each item has `line`, `issue`, `confidence`, `severity` and a one-line `why it matters`.\n\n**Changes:**\n- Removed \"Only report critical issues\". Current Claude models follow it literally and drop real bugs, so I now ask for every issue with a severity label, and you can filter afterwards (R8).\n- Added the goal and the reason for it (R1).\n- Added a checkable done-criterion and stated the scope (R2, R3).\n- Stated that this is an assessment, not a fix (R4).\n- Added the README's data shapes as context (R5).\n\n**Findings, most severe first**\n\n| Line | Issue | Confidence | Severity |\n|---|---|---|---|\n| 29 (26–27) | `eval` on a string built from the discount `code`. A code like `PCT10);process.exit(1` or `FLAT5;require(...)` runs arbitrary code. | High | Critical |\n| 53 | `saveOrder(db, order)` isn't awaited. `submitOrder` returns the id before the insert completes, and a failed insert becomes an unhandled rejection. The order is marked `submitted` regardless. | High | Critical |\n| 63–65 | `loadOrder` catches DB errors, logs them and returns `undefined`. Callers can't tell \"failed\" from \"not found\". | High | High |\n| 57–62 | `loadOrder` caches `null` or `undefined` rows, so a missing order stays \"missing\" after it is created. The cache is also unbounded and never invalidated, so it goes stale after updates. | Medium | High |\n| 34 | `paginate` uses `start + limit - 1`, so each page has one item too few and the last item of each page is skipped. It should be `start + limit`. | High | High |\n| 9 | `legacyTaxRate` returns 0.7 for non-EU regions, which is likely a typo for 0.07. It is unexported and unused, so this is dead code today. | Low | Low–Medium |\n| 14, 19 | Money is computed in floating point and `isPaidInFull` compares with `===`. Totals like 0.1 × 3 won't equal `paid`. Use integer cents or a tolerance. | High | High |\n| 14 | `computeTotal` doesn't validate `price` or `qty`. Negative or `NaN` values pass through, and a negative qty lowers the total. | Medium | Medium |\n| 26–27 | The discount percentage isn't validated or bounded. `PCT150` gives a negative total and `FLAT500` can go below zero. A non-numeric suffix throws or produces `NaN`. | High | Medium |\n| 38 | `sortItems` calls `Array.sort` in place, so it mutates `order.items`. This is a side effect for a function that reads like a getter. | High | Medium |\n| 43–44 | `new Date('2026-01-31')` parses as UTC, but `getFullYear` and `getDate` read local time. In timezones west of UTC this returns the previous day. | High | Medium |\n| 44 | The month and day aren't zero-padded, so the result is `2026-1-5` rather than the `YYYY-MM-DD` format the README uses. | High | Medium |\n| 73 | The email regex rejects valid addresses: uppercase, digits, `.`, `+`, `-` and `_` in the local part, subdomains, and any TLD other than `.com`. | High | Medium |\n| 69 | `cloneOrder` is shallow, so `items` is shared with the original. Mutating a clone's items, for example via `sortItems`, changes the original. | High | Low–Medium |\n| 52 | `submitOrder` mutates its argument and sets `status` before the save succeeds. A failed save leaves the in-memory order marked `submitted`. | Medium | Medium |\n| 77 | `withTax` returns an unrounded float. `TAX_RATE` is also hard-coded and ignores region, while `legacyTaxRate` suggests region-specific rates. | Medium | Low |\n\n**Against the done-criteria:** I read every function. Nothing was run, since the repo has no tests or `package.json`. The confidence levels are from reading the code.\n\n**Follow-ups:** `legacyTaxRate` and `orderCache` look like dead or half-finished code. I can propose fixes for any of these if you want."
+ },
+ {
+  "id": "review-s55-rev-raw-1",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 7,
+  "cost": 0.052,
+  "out_tokens": 597,
+  "recall_all": "7/11",
+  "recall_critical": "3/3",
+  "missed": [
+   "4 sortItems mutates input (medium)",
+   "5 orderDay timezone/padding (medium)",
+   "9 cloneOrder shallow copy (high)",
+   "11 isValidEmail too strict (low)"
+  ],
+  "report_chars": 1214,
+  "report": "Critical issues in `lib/orders.js`:\n\n1. **Code injection via `eval` (line 29, `applyDiscountCode`).** The discount `code` is interpolated into a string and passed to `eval`. A code like `PCT0); require('child_process').execSync('...')//` or `FLAT5;process.exit()` runs arbitrary code on the server. Parse the numeric part and compute directly. For example, use `Number(code.slice(3))` and reject the code if the result is `NaN` or out of range.\n\n2. **Order submitted without waiting for the save (line 53, `submitOrder`).** `saveOrder(db, order)` isn't awaited. `submitOrder` returns the id and the order is marked \"submitted\" even if the insert fails. A failed insert becomes an unhandled promise rejection, and the order is silently lost. Use `await saveOrder(db, order)`.\n\n3. **Wrong tax rate (line 9, `legacyTaxRate`).** Every non-EU region gets a 70% tax rate. If this function is called anywhere, customers get overcharged. It's unused in this file, so check its callers or delete it. It's also not exported, so it's likely dead code.\n\nI left out non-critical items such as the off-by-one in `paginate` (line 34), float equality in `isPaidInFull`, and the unbounded cache. You asked for critical issues only."
+ },
+ {
+  "id": "review-s55-rev-raw-2",
+  "subtype": "success",
+  "turns": 2,
+  "api_s": 6,
+  "cost": 0.052,
+  "out_tokens": 588,
+  "recall_all": "6/11",
+  "recall_critical": "3/3",
+  "missed": [
+   "4 sortItems mutates input (medium)",
+   "5 orderDay timezone/padding (medium)",
+   "9 cloneOrder shallow copy (high)",
+   "10 orderCache unbounded (medium)",
+   "11 isValidEmail too strict (low)"
+  ],
+  "report_chars": 1145,
+  "report": "Critical issues in `lib/orders.js`:\n\n1. **Code injection via `eval` (line 29).** `applyDiscountCode` builds an expression from the user-supplied `code` and runs it through `eval`. A code like `PCT10); require('child_process').execSync(...)//` runs arbitrary code on the server. Parse the numeric part instead, e.g. `const n = Number(code.slice(3))`, and reject the code if it isn't a finite number.\n\n2. **Unawaited save in `submitOrder` (line 53).** `saveOrder(db, order)` has no `await`. `submitOrder` returns the id before the insert finishes, and a failed insert becomes an unhandled rejection that the caller never sees. A caller can be told an order was submitted when it was never persisted. Use `await saveOrder(db, order)`.\n\n3. **Float equality on money in `isPaidInFull` (line 19).** `computeTotal(...) === order.paid` compares floating-point values. For example, 0.1 + 0.2 !== 0.3, so fully paid orders can be reported as unpaid, or the reverse. Compare integer cents or use a tolerance.\n\nI left out non-critical items such as the wrong tax rate in `legacyTaxRate`, the `limit - 1` in `paginate`, and the error handling in `loadOrder`."
+ }
+]

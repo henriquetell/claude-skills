@@ -1,0 +1,77 @@
+[
+ {
+  "id": "fable-1",
+  "subtype": "success",
+  "turns": 86,
+  "wall_s": 826,
+  "cost": 7.852,
+  "models": {
+   "fable-5-1": 7.852
+  },
+  "think": 14469,
+  "hidden": "2228/2228",
+  "hidden_fails": [],
+  "own": "2242 passed, 0 failed",
+  "typecheck": "pass"
+ },
+ {
+  "id": "opus-1",
+  "subtype": "success",
+  "turns": 34,
+  "wall_s": 507,
+  "cost": 1.341,
+  "models": {
+   "opus-5-5": 1.341
+  },
+  "think": 4286,
+  "hidden": "2228/2228",
+  "hidden_fails": [],
+  "own": "2229 passed, 0 failed",
+  "typecheck": "pass"
+ },
+ {
+  "id": "opus-2",
+  "subtype": "success",
+  "turns": 37,
+  "wall_s": 620,
+  "cost": 1.328,
+  "models": {
+   "opus-5-5": 1.328
+  },
+  "think": 4335,
+  "hidden": "2228/2228",
+  "hidden_fails": [],
+  "own": "2232 passed, 0 failed",
+  "typecheck": "pass"
+ },
+ {
+  "id": "sonnet-1",
+  "subtype": "success",
+  "turns": 21,
+  "wall_s": 92,
+  "cost": 0.498,
+  "models": {
+   "sonnet-5-5": 0.498
+  },
+  "think": 1569,
+  "hidden": "2228/2228",
+  "hidden_fails": [],
+  "own": "2230 passed, 0 failed",
+  "typecheck": "pass"
+ },
+ {
+  "id": "sonnet-2",
+  "subtype": "success",
+  "turns": 21,
+  "wall_s": 97,
+  "cost": 0.435,
+  "models": {
+   "sonnet-5-5": 0.435
+  },
+  "think": 2222,
+  "hidden": "2228/2228",
+  "hidden_fails": [],
+  "own": "2228 passed, 0 failed",
+  "typecheck": "pass"
+ }
+]

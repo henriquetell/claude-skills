@@ -1,0 +1,202 @@
+[
+ {
+  "id": "cur-1",
+  "subtype": "success",
+  "turns": 7,
+  "wall_s": 36,
+  "cost": 0.239,
+  "models": {
+   "sonnet-5-5": 0.239
+  },
+  "out": 4200,
+  "think": 494,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "cur-2",
+  "subtype": "success",
+  "turns": 13,
+  "wall_s": 67,
+  "cost": 0.279,
+  "models": {
+   "sonnet-5-5": 0.279
+  },
+  "out": 6188,
+  "think": 675,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "haiku-1",
+  "subtype": "success",
+  "turns": 16,
+  "wall_s": 82,
+  "cost": 0.03,
+  "models": {
+   "haiku-5-5": 0.03
+  },
+  "out": 13448,
+  "think": 4880,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "haiku-2",
+  "subtype": "success",
+  "turns": 16,
+  "wall_s": 74,
+  "cost": 0.025,
+  "models": {
+   "haiku-5-5": 0.025
+  },
+  "out": 12840,
+  "think": 5112,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "med-1",
+  "subtype": "success",
+  "turns": 7,
+  "wall_s": 41,
+  "cost": 0.225,
+  "models": {
+   "sonnet-5-5": 0.225
+  },
+  "out": 4468,
+  "think": 490,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "med-2",
+  "subtype": "success",
+  "turns": 7,
+  "wall_s": 46,
+  "cost": 0.224,
+  "models": {
+   "sonnet-5-5": 0.224
+  },
+  "out": 4374,
+  "think": 371,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "new-1",
+  "subtype": "success",
+  "turns": 9,
+  "wall_s": 46,
+  "cost": 0.234,
+  "models": {
+   "sonnet-5-5": 0.234
+  },
+  "out": 4624,
+  "think": 428,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "new-2",
+  "subtype": "success",
+  "turns": 7,
+  "wall_s": 39,
+  "cost": 0.223,
+  "models": {
+   "sonnet-5-5": 0.223
+  },
+  "out": 4094,
+  "think": 357,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "nolean-1",
+  "subtype": "success",
+  "turns": 7,
+  "wall_s": 46,
+  "cost": 0.227,
+  "models": {
+   "sonnet-5-5": 0.227
+  },
+  "out": 4512,
+  "think": 681,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ },
+ {
+  "id": "nolean-2",
+  "subtype": "success",
+  "turns": 8,
+  "wall_s": 44,
+  "cost": 0.228,
+  "models": {
+   "sonnet-5-5": 0.228
+  },
+  "out": 4602,
+  "think": 424,
+  "hidden": "10/10",
+  "hidden_fails": [],
+  "own_tests": "pass",
+  "typecheck": "pass",
+  "changed": [
+   "src/ui/lethalLookahead.ts",
+   "src/ui/lethalLookahead.tests.ts"
+  ]
+ }
+]

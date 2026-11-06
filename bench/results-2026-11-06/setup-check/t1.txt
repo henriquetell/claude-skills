@@ -1,0 +1,1 @@
+Our api-worker agent (.claude/agents/api-worker.md) runs on Sonnet and is getting expensive. Make it cheaper to run. Keep it on Sonnet: that is a design decision. Edit the file directly, then tell me in a few lines what you changed and why.

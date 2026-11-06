@@ -1,0 +1,58 @@
+bench/run.sh ledger claude-sonnet-5-5 s55-low 1 --effort low --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-low 2 --effort low --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-med 1 --effort medium --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-med 2 --effort medium --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-high 1 --effort high --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-high 2 --effort high --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-medscope 1 --effort medium --prompt $SCRATCH/precise_ledger_scope.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-medscope 2 --effort medium --prompt $SCRATCH/precise_ledger_scope.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-lean 1 --skill sonnet-lean/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-lean 2 --skill sonnet-lean/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-haiku-5-5 h55-med 1 --effort medium --out $SCRATCH/runs
+bench/run.sh ledger claude-haiku-5-5 h55-med 2 --effort medium --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-def 1 --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-def 2 --out $SCRATCH/runs
+bench/run.sh review claude-sonnet-5-5 s55-rev-raw 1 --prompt bench/prompts/review_only_critical.txt --out $SCRATCH/runs
+bench/run.sh review claude-sonnet-5-5 s55-rev-raw 2 --prompt bench/prompts/review_only_critical.txt --out $SCRATCH/runs
+bench/run.sh review claude-sonnet-5-5 s55-rev-pm 1 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh review claude-sonnet-5-5 s55-rev-pm 2 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh review claude-opus-5-5 o55-rev-raw 1 --prompt bench/prompts/review_only_critical.txt --out $SCRATCH/runs
+bench/run.sh review claude-opus-5-5 o55-rev-raw 2 --prompt bench/prompts/review_only_critical.txt --out $SCRATCH/runs
+bench/run.sh review claude-opus-5-5 o55-rev-pm 1 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh review claude-opus-5-5 o55-rev-pm 2 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-vague-raw 1 --prompt bench/prompts/vague_ledger.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-vague-raw 2 --prompt bench/prompts/vague_ledger.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-vague-pm 1 --prompt bench/prompts/vague_ledger.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-sonnet-5-5 s55-vague-pm 2 --prompt bench/prompts/vague_ledger.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-dbl-raw 1 --prompt bench/prompts/ledger_double_check.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-dbl-raw 2 --prompt bench/prompts/ledger_double_check.txt --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-dbl-pm 1 --prompt bench/prompts/ledger_double_check.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+bench/run.sh ledger claude-opus-5-5 o55-dbl-pm 2 --prompt bench/prompts/ledger_double_check.txt --skill prompt-master/SKILL.md --out $SCRATCH/runs
+review claude-haiku-5-5 h55-rev-raw 1 --prompt $SCRATCH/in/review_only_critical.txt --out $SCRATCH/runs3R
+review claude-haiku-5-5 h55-rev-raw 2 --prompt $SCRATCH/in/review_only_critical.txt --out $SCRATCH/runs3R
+review claude-haiku-5-5 h55-rev-pm 1 --prompt $SCRATCH/in/review_only_critical.txt --skill $SCRATCH/in/prompt-master.md --out $SCRATCH/runs3R
+review claude-haiku-5-5 h55-rev-pm 2 --prompt $SCRATCH/in/review_only_critical.txt --skill $SCRATCH/in/prompt-master.md --out $SCRATCH/runs3R
+slug claude-haiku-5-5 h55 1 --out $SCRATCH/runs3L
+slug claude-haiku-5-5 h55 2 --out $SCRATCH/runs3L
+limiter claude-haiku-5-5 h55 1 --out $SCRATCH/runs3L
+limiter claude-haiku-5-5 h55 2 --out $SCRATCH/runs3L
+ledger claude-opus-5-5 o55-dbl-pmv2 1 --prompt bench/prompts/ledger_double_check.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+ledger claude-opus-5-5 o55-dbl-pmv2 2 --prompt bench/prompts/ledger_double_check.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+ledger claude-sonnet-5-5 s55-vague-pmv2 1 --prompt bench/prompts/vague_ledger.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+ledger claude-sonnet-5-5 s55-vague-pmv2 2 --prompt bench/prompts/vague_ledger.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+review claude-haiku-5-5 h55-rev-pmv2 1 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+review claude-haiku-5-5 h55-rev-pmv2 2 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+review claude-sonnet-5-5 s55-rev-pmv2 1 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+review claude-sonnet-5-5 s55-rev-pmv2 2 --prompt bench/prompts/review_only_critical.txt --skill prompt-master/SKILL.md --out $SCRATCH/rt
+ledger claude-opus-5-5 dl-none 1 --prompt $SCRATCH/in/delegate_ledger.txt --out $SCRATCH/dl
+ledger claude-opus-5-5 dl-none 2 --prompt $SCRATCH/in/delegate_ledger.txt --out $SCRATCH/dl
+ledger claude-opus-5-5 dl-old 1 --prompt $SCRATCH/in/delegate_ledger.txt --skill $SCRATCH/in/sonnet-lean-old.md --out $SCRATCH/dl
+ledger claude-opus-5-5 dl-old 2 --prompt $SCRATCH/in/delegate_ledger.txt --skill $SCRATCH/in/sonnet-lean-old.md --out $SCRATCH/dl
+ledger claude-opus-5-5 dl-new 1 --prompt $SCRATCH/in/delegate_ledger.txt --skill $SCRATCH/in/sonnet-lean-new.md --out $SCRATCH/dl
+ledger claude-opus-5-5 dl-new 2 --prompt $SCRATCH/in/delegate_ledger.txt --skill $SCRATCH/in/sonnet-lean-new.md --out $SCRATCH/dl
+ledger claude-opus-5-5 ds-none 1 --prompt $SCRATCH/in/delegate_sonnet.txt --out $SCRATCH/ds
+ledger claude-opus-5-5 ds-none 2 --prompt $SCRATCH/in/delegate_sonnet.txt --out $SCRATCH/ds
+ledger claude-opus-5-5 ds-old 1 --prompt $SCRATCH/in/delegate_sonnet.txt --skill $SCRATCH/in/sonnet-lean-old.md --out $SCRATCH/ds
+ledger claude-opus-5-5 ds-old 2 --prompt $SCRATCH/in/delegate_sonnet.txt --skill $SCRATCH/in/sonnet-lean-old.md --out $SCRATCH/ds
+ledger claude-opus-5-5 ds-new 1 --prompt $SCRATCH/in/delegate_sonnet.txt --skill $SCRATCH/in/sonnet-lean-new.md --out $SCRATCH/ds
+ledger claude-opus-5-5 ds-new 2 --prompt $SCRATCH/in/delegate_sonnet.txt --skill $SCRATCH/in/sonnet-lean-new.md --out $SCRATCH/ds

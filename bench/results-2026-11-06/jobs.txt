@@ -1,0 +1,28 @@
+review claude-sonnet-5-5 s55-review-raw 1 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt
+review claude-sonnet-5-5 s55-review-raw 2 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt
+review claude-sonnet-5-5 s55-review-pm 1 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+review claude-sonnet-5-5 s55-review-pm 2 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+review claude-opus-5-5 o55-review-raw 1 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt
+review claude-opus-5-5 o55-review-raw 2 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt
+review claude-opus-5-5 o55-review-pm 1 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+review claude-opus-5-5 o55-review-pm 2 --prompt $SCRATCH/cs/bench/prompts/review_only_critical.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+ledger claude-sonnet-5-5 s55-vague-raw 1 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt
+ledger claude-sonnet-5-5 s55-vague-raw 2 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt
+ledger claude-sonnet-5-5 s55-vague-pm 1 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+ledger claude-sonnet-5-5 s55-vague-pm 2 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+ledger claude-opus-5-5 o55-vague-raw 1 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt
+ledger claude-opus-5-5 o55-vague-raw 2 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt
+ledger claude-opus-5-5 o55-vague-pm 1 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+ledger claude-opus-5-5 o55-vague-pm 2 --prompt $SCRATCH/cs/bench/prompts/vague_ledger.txt --skill $SCRATCH/cs/prompt-master/SKILL.md
+ledger claude-opus-5-5 o55-precise 1
+ledger claude-opus-5-5 o55-precise 2
+ledger claude-opus-5-5 o55-dblcheck 1 --prompt $SCRATCH/cs/bench/prompts/ledger_double_check.txt
+ledger claude-opus-5-5 o55-dblcheck 2 --prompt $SCRATCH/cs/bench/prompts/ledger_double_check.txt
+ledger claude-sonnet-5-5 s55-low 1 --effort low
+ledger claude-sonnet-5-5 s55-low 2 --effort low
+ledger claude-sonnet-5-5 s55-med 1 --effort medium
+ledger claude-sonnet-5-5 s55-med 2 --effort medium
+ledger claude-sonnet-5-5 s55-high 1 --effort high
+ledger claude-sonnet-5-5 s55-high 2 --effort high
+ledger claude-haiku-5-5 h55 1
+ledger claude-haiku-5-5 h55 2

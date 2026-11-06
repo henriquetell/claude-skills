@@ -1,0 +1,4 @@
+Implement the specification in README.md by fixing the modules under lib/. Run `node test/visible.test.js` to check your work. The visible tests cover only part of the spec: the implementation must satisfy every rule in README.md, including cases the visible tests don't exercise, because a hidden test suite will be run against it afterwards. Do not modify or delete anything under test/. There is nobody available to answer questions; make reasonable assumptions and state them. When finished, report what you changed and exactly what you verified.
+
+
+When the work you were asked for is done and checked, stop and report. Don't add features, tests, files, docs or refactors that weren't asked for. If you think one would help, mention it at the end instead of doing it.

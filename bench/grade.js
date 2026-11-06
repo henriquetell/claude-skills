@@ -10,6 +10,7 @@ const rows = [];
 for (const id of ids) {
   const task = id.split('-')[0]; const dir = path.join(RUNS, id);
   if (!fs.existsSync(dir)) continue;
+  if (!fs.existsSync(path.join(HERE, 'hidden', task + '.hidden.test.js'))) continue; // e.g. review-* runs: grade with grade-review.js
   let j = {}; try { j = JSON.parse(fs.readFileSync(path.join(RUNS, id + '.json'), 'utf8')); } catch (e) { j = { parse_error: String(e) }; }
   const run = (cmd) => { try { return cp.execSync(cmd, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { return (e.stdout || '') + (e.stderr || ''); } };
   const hiddenSrc = path.join(HERE, 'hidden', task + '.hidden.test.js'), hiddenDst = path.join(dir, 'test', 'hidden.test.js');
